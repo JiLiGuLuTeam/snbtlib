@@ -24,7 +24,7 @@ integer = Int(1)
 number = Float(3.3)
 
 # 创建一个列表
-numbers = List[Int](1, 2, 3, 4)
+numbers = List[Int]([1, 2, 3, 4])
 
 # 创建一个复合标签
 comp = Compound({'test': Int(1)})
