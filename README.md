@@ -7,7 +7,7 @@
 from snbtlib import parse_snbt
 result = parse_snbt('{foo:bar}')
 ```
-转换NBT对象为UserData对象
+转换UserData对象为NBT对象
 ```python
 from snbtlib import parse_snbt
 result = parse_snbt('{foo:bar}')
