@@ -1,28 +1,36 @@
 # -*- coding: utf-8 -*-
-import __future__
 from base import *
+
+def _cut_str(obj):
+	from __init__ import NBT
+	obj = NBT(obj).stringify()
+	return ('%s ... %s' % (obj[:40], obj[-40:])) if len(obj) > 80 else obj
 
 if not bool:
 	long = type()
 
 class Byte(BaseInteger):
 	tag_id = 1
-	limit = 8
+	limit = 128
 	suffix = 'b'
 
 class Short(BaseInteger):
 	tag_id = 2
-	limit = 16
+	limit = 32768
 	suffix = 's'
 
 class Int(BaseInteger):
 	tag_id = 3
-	limit = 32
+	limit = 2 ** 31
 	suffix = ''
 
 class Long(Base, long):
 	tag_id = 4
+	limit = 2 ** 63
 	suffix = 'l'
+
+	def parse(self):
+		return {'__type__': self.tag_id, '__value__': int(self)}
 
 
 class Float(Base, float):
@@ -34,6 +42,9 @@ class Float(Base, float):
 	
 	def __repr__(self):
 		return '%s(%s)' % (self.__class__.__name__, float(self))
+	
+	def parse(self):
+		return {'__type__': self.tag_id, '__value__': float(self)}
 
 class Double(Base, float):
 	tag_id = 6
@@ -44,6 +55,9 @@ class Double(Base, float):
 	
 	def __repr__(self):
 		return '%s(%s)' % (self.__class__.__name__, float(self))
+	
+	def parse(self):
+		return {'__type__': self.tag_id, '__value__': float(self)}
 
 class ByteArray(BaseArray):
 	tag_id = 7
@@ -70,8 +84,11 @@ class List(Base, list):
 		except:
 			raise NBTStoreError('初始化 %s 内数据时错误,列表类型为 %s' % (iterable, cls.itemtype))
 	
-	def __init__(self, *values):
+	def __init__(self, values):
 		self = super(List, self).__init__([self.itemtype(i) for i in values])
+
+	def parse(self):
+		return [x.parse() for x in self]
 	
 	def __getitem__(self, index):
 		return super(List, self).__getitem__(index)
@@ -115,13 +132,21 @@ class List(Base, list):
 	def __repr__(self):
 		return '%s(%s)' % (self.__class__.__name__, super(List, self).__repr__())
 		
-
 class Compound(Base, dict):# 还缺点啥,例如setitem
 	tag_id = 10
 
-	def path(self, path):
-		# type: (str) -> Base
-		from snbtlib import parse_snbt, NBT
+	def __init__(self, mapping): # type: (dict) -> None
+		super(Compound, self).__init__(mapping)
+
+	def parse(self):
+		return {k: v.parse() for k, v in self.items()}
+
+	def path(self, path=None):
+		# type: (str | None) -> Base
+		if path is None:
+			return self
+
+		from __init__ import parse_snbt, NBT
 		INDEX_ONLY = 'INDEX_ONLY'
 		ALL_ARRAY = 'ALL_ARRAY'
 		def parse_add(add):
@@ -200,16 +225,16 @@ class Compound(Base, dict):# 还缺点啥,例如setitem
 					if isinstance(source, dict) and all(x in source.items() for x in index.items()):
 						source = source
 					else:
-						raise NBTPathError('子标签 %s 没有匹配 %s' % (source, index))
+						raise NBTPathError('子标签 %s 没有匹配 %s' % (_cut_str(source), index))
 				else:
 					try:
 						source = source[index]
 					except (IndexError, KeyError):
-						raise NBTPathError('子标签 %s 中不存在标签 %s' % (source, index))
+						raise NBTPathError('子标签 %s 中不存在标签 %s' % (_cut_str(source), index))
 			elif mode == ALL_ARRAY and isinstance(source, list) and isinstance(index, NBT):
 				source = [x for x in source if isinstance(x, dict) and all(y in x.items() for y in index.items())]
 			else:
-				raise NBTPathError('路径匹配 %s 时失败' % (source))
+				raise NBTPathError('路径匹配 %s 时失败' % (_cut_str(source)))
 		return source
 
 

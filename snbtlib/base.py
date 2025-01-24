@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-import __future__
 from array import array
 if not isinstance({}.keys(), list):
 	xrange = range
 
 class BaseNBTError(Exception):
-	def __init__(self, msg):
-		self.msg = msg
-		super(BaseNBTError, self).__init__(msg)
-
 	translate = ''
 	'''错误对应翻译'''
 
@@ -30,14 +25,17 @@ class Base(object):
 	suffix = ''
 	'''当前类型对应后缀,同SNBT'''
 
+	def parse(self):
+		'''返回自身数据转换为UserData的格式'''
+		return {'__type__': self.tag_id, '__value__': self}
+
 class BaseInteger(Base, int):
 	limit = 0
-	'''当前数字最大范围,为 [-2 ** limit, 2 ** limit)'''
+	'''当前数字最大范围,为 [limit, limit)'''
 
 	def __new__(cls, value=0):
 		self = super(BaseInteger, cls).__new__(cls, value)
-		nrange = 2 ** cls.limit
-		if not -nrange < int(self) < nrange:
+		if not -cls.limit <= int(self) < cls.limit:
 			raise NBTStoreError('整数 %s 超出该类型给定值范围' % value)
 		return self
 
@@ -46,18 +44,24 @@ class BaseInteger(Base, int):
 	
 	def __repr__(self):
 		return '%s(%s)' % (self.__class__.__name__, int(self))
+	
+	def parse(self):
+		return {'__type__': self.tag_id, '__value__': int(self)}
 
+_types = {
+	7: 'b',
+	11: 'i',
+	12: 'l'
+}
 class BaseArray(Base, array):
 	itemtype = None # type: BaseInteger
 	'''当前数组类型'''
-	__types = {
-		7: 'b',
-		11: 'i',
-		12: 'l'
-	}
 	def __new__(cls, iterable):
-		self = super(BaseArray, cls).__new__(cls, cls.__types[cls.tag_id], [int(i) for i in iterable])
+		self = super(BaseArray, cls).__new__(cls, _types[cls.tag_id], [int(i) for i in iterable])
 		return self
+	
+	def parse(self):	
+		return list(self)
 
 	def _checktype(self, value):
 		return self.itemtype == type(value)
