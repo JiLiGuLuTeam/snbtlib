@@ -11,6 +11,7 @@ behavior_pack_xxx/
     snbtlib/
         __init__.py
         base.py
+        pyarray.py
         tag.py
         modMain.py
     你的模组/

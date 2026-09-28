@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=undefined-variable,used-before-assignment,too-many-function-args,access-member-before-definition,unsubscriptable-object,no-value-for-parameter,no-name-in-module,no-method-argument,no-self-argument
 from collections import OrderedDict
-from array import array
+from .pyarray import array
 if not isinstance({}.keys(), list):
     xrange = range
 
