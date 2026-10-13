@@ -11,7 +11,13 @@ except ImportError:
 
 _KEY_BLACKLIST = frozenset((
     "_uuid",
-    "modelName"
+    "modelName",
+    "custom_appearance",
+    "scriptData",
+    "data_key",
+    "function_block_face",
+    "multiHorseNumInLevel",
+    "multiHorseNumByOwner"
 ))
 
 def _quote_string(value): # type: (str) -> str
@@ -220,7 +226,7 @@ class List(Base, list):
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, super(List, self).__repr__())
         
-class Compound(Base, dict): # 还缺点啥,例如update
+class Compound(Base, dict):
     tag_id = 10
     tag_name = "TAG_Compound"
 
@@ -231,6 +237,8 @@ class Compound(Base, dict): # 还缺点啥,例如update
                 self[k] = v
 
     def serialize(self): # type: () -> dict
+        if not _KEY_BLACKLIST.isdisjoint(self): # dict.update 等写法不经过 __setitem__,交给引擎前再查一次
+            raise NBTIllegalKeyError("应规则要求,禁止读写键: %s" % ", ".join(sorted(_KEY_BLACKLIST.intersection(self))))
         return {k: v.serialize() for k, v in self.items()}
 
     def path(self, path):  # type: (str) -> Base | None
@@ -363,11 +371,15 @@ class Compound(Base, dict): # 还缺点啥,例如update
         if not isinstance(key, str):
             raise NBTStoreError("键必须为字符串")
         if key in _KEY_BLACKLIST:
-            raise NBTStoreError("应规则要求,禁止使用键值: %s" % key)
+            raise NBTIllegalKeyError("应规则要求,禁止读写键: %s" % key)
         _raise_end_store_error(value)
         if not _is_nbt_tag(value):
             raise NBTStoreError("值必须为NBT标签对象")
         super(Compound, self).__setitem__(key, value)
+
+    def update(self, *args, **kwargs): # type: (dict, Tag) -> None
+        for k, v in dict(*args, **kwargs).items():
+            self[k] = v
 
     def get(self, key, default=None): # type: (str, Tag) -> Tag
         if not isinstance(key, str):
@@ -381,7 +393,7 @@ class Compound(Base, dict): # 还缺点啥,例如update
         if not isinstance(key, str):
             raise NBTStoreError("键必须为字符串")
         if key in _KEY_BLACKLIST:
-            raise NBTStoreError("应规则要求,禁止使用键值: %s" % key)
+            raise NBTIllegalKeyError("应规则要求,禁止读写键: %s" % key)
         _raise_end_store_error(default)
         if not _is_nbt_tag(default):
             raise NBTStoreError("指定默认值必须为NBT标签对象")
@@ -393,15 +405,9 @@ class IntArray(BaseArray):
     suffix = "I"
     item_type = Int
 
-class LongArray(BaseArray):
-    tag_id = 12
-    tag_name = "TAG_Long_Array"
-    suffix = "L"
-    item_type = Long
-
 end = End()
 _T_KEY = 1
 
 __all__ = [
-    "End", "Byte", "Short", "Int", "Long", "Float", "Double", "ByteArray", "String", "List", "Compound", "IntArray", "LongArray"
+    "End", "Byte", "Short", "Int", "Long", "Float", "Double", "ByteArray", "String", "List", "Compound", "IntArray"
 ]

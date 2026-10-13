@@ -14,8 +14,7 @@ _LONG_PATTERN = re.compile(r"^[-+]?[0-9]+[lL]$")
 
 _ARRAY_TYPES = {
     "B": (tag.ByteArray, tag.Byte),
-    "I": (tag.IntArray, tag.Int),
-    "L": (tag.LongArray, tag.Long)
+    "I": (tag.IntArray, tag.Int)
 }
 
 def _is_allowed_unquoted_char(ch):
@@ -160,7 +159,7 @@ class _SnbtParser(object):
     def _set_compound_value(self, compound, key, value, key_start):
         try:
             compound[key] = value
-        except base.BaseNBTError as exc:
+        except base.NBTStoreError as exc:
             self._raise(key_start, str(exc))
 
     def _read_compound(self):
@@ -286,18 +285,37 @@ def parse_value(value_part): # type: (str) -> base.Base
         raise base.NBTParseError(value_part, 0, "缺少NBT值")
     return _SnbtParser(value_part).parse_root_value()
 
-_parse_snbt_cache = {} # type: _OrderedDict[str, tag.Compound]
+def _copy_tag(value):
+    """复制解析缓存里的容器标签,数值与字符串标签不可变,直接共享"""
+    if isinstance(value, tag.Compound):
+        new = tag.Compound()
+        for k, v in value.items():
+            dict.__setitem__(new, k, _copy_tag(v))
+        return new
+    if isinstance(value, tag.List):
+        new = tag.List.__new__(tag.List)
+        new.item_type = value.item_type
+        new._specified_item_type = value._specified_item_type
+        list.extend(new, [_copy_tag(v) for v in value])
+        return new
+    if isinstance(value, base.BaseArray):
+        return type(value)(value)
+    return value
+
+_parse_snbt_cache = _OrderedDict() # type: _OrderedDict[str, tag.Compound]
 def parse_snbt(snbt): # type: (str) -> tag.Compound
     """将字符串形式的NBT解析为复合标签"""
     snbt = snbt.strip()
     if not snbt:
         return tag.Compound()
-    if snbt in _parse_snbt_cache:
-        return _parse_snbt_cache[snbt]
-    _parse_snbt_cache[snbt] = result = _SnbtParser(snbt).parse_root_compound()
-    if len(_parse_snbt_cache) > 1000:
-        _parse_snbt_cache.popitem(last=False)
-    return result
+    cached = _parse_snbt_cache.get(snbt)
+    if cached is None:
+        cached = _SnbtParser(snbt).parse_root_compound()
+        if len(_parse_snbt_cache) >= 1000:
+            _parse_snbt_cache.popitem(last=False)
+        _parse_snbt_cache[snbt] = cached
+    # 缓存的解析结果不外传,每次返回副本,调用方修改返回值不会污染缓存
+    return _copy_tag(cached)
     
 def parse_item_format(value): # type: (str | tag.Compound) -> dict
     """将字符串形式的物品共通标签解析为复合标签"""
@@ -337,8 +355,7 @@ _value_types = {
 }
 _arr_types = {
     7: tag.ByteArray,
-    11: tag.IntArray,
-    12: tag.LongArray
+    11: tag.IntArray
 }
 _all_types = {
     9: tag.List,
@@ -372,7 +389,7 @@ def _de_parse_dict(value):
     for k, v in value.items():
         k = str(k)
         if _is_typed_payload(v):
-            result[k] = _de_parse_list(v) if v["__type__"] in {7, 11, 12} else _de_parse_value(v)
+            result[k] = _de_parse_list(v) if v["__type__"] in _arr_types else _de_parse_value(v)
         elif isinstance(v, list):
             result[k] = _de_parse_list(v)
         elif isinstance(v, dict):

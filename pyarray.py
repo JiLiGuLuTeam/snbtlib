@@ -4,8 +4,7 @@
 纯 Python 实现的整数数组 array, 用法与 Python 2.7 标准库 array.array 相同
 
 与标准库的差异:
-- 只支持类型码 b (1 字节)、i (4 字节)、l (8 字节), 其余类型码报 ValueError; 类型码只接受 str
-- l 在所有平台都是 8 字节, 整数按 64 位 C long 转换 (标准库在 PC 上是 4 字节)
+- 只支持类型码 b (1 字节)、i (4 字节), 其余类型码报 ValueError; 类型码只接受 str
 - 没有 buffer_info、tofile、fromfile、read、write、tounicode、fromunicode, 不支持 pickle
 - fromstring() 只接受 str
 """
@@ -55,7 +54,6 @@ def _to_i(v):
 _TYPES = {
     "b": (1, "b", _to_b),
     "i": (4, "i", _to_i),
-    "l": (8, "q", _as_long),
 }
 
 def _index(item):
@@ -95,7 +93,7 @@ class array(object):
         initial = args[1] if argc == 2 else None
         it = iter(initial) if argc == 2 and not isinstance(initial, (list, tuple, str)) else None
         if typecode not in _TYPES:
-            raise ValueError("bad typecode (must be b, i or l)")
+            raise ValueError("bad typecode (must be b or i)")
         self = object.__new__(cls)
         self._typecode = typecode
         if isinstance(initial, (list, tuple)):

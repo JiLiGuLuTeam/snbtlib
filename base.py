@@ -12,6 +12,9 @@ class BaseNBTError(Exception):
 class NBTStoreError(BaseNBTError):
     TRANSLATION = "NBT存储错误"
 
+class NBTIllegalKeyError(BaseNBTError):
+    TRANSLATION = "NBT非法键错误"
+
 class NBTParseError(BaseNBTError):
     TRANSLATION = "NBT解析错误"
     def __init__(self, snbt, index, msg):
@@ -74,7 +77,7 @@ def _get_tag_type_name(value):
         return cls.tag_name
     return cls.__name__
 
-_VALID_TAG_IDS = frozenset(xrange(1, 13))
+_VALID_TAG_IDS = frozenset(xrange(1, 12))
 
 def _is_end_tag(value):
     return isinstance(value, Base) and value.__class__.tag_id == 0
@@ -126,8 +129,7 @@ class BaseInteger(Base, int):
 
 _types = {
     7: "b",
-    11: "i",
-    12: "l"
+    11: "i"
 }
 class BaseArray(Base, array):
     item_type = None # type: type[BaseInteger]
@@ -166,14 +168,16 @@ class BaseArray(Base, array):
     
     def colorify(self):
         result = ""
+        item_suffix = self.item_type.suffix
         for i in self:
-            result += "§6%s§c%s§r, " % (int(i), self.suffix)
+            result += "§6%s§c%s§r, " % (int(i), item_suffix)
         return "[§c%s§r; %s]" % (self.suffix, result.strip(", "))
     
     def __str__(self):
         result = ""
+        item_suffix = self.item_type.suffix
         for i in self:
-            result += "%s%s, " % (int(i), self.suffix)
+            result += "%s%s, " % (int(i), item_suffix)
         return "[%s; %s]" % (self.suffix, result.strip(", "))
     
     def __repr__(self):
@@ -216,10 +220,9 @@ paths_cache = OrderedDict()
 def nbtpath_parse(path):
     if path is None:
         return []
-    if path in paths_cache:
-        if len(paths_cache) > 2000:
-            paths_cache.popitem(last=False)
-        return paths_cache[path]
+    out = paths_cache.get(path)
+    if out is not None:
+        return out
 
     s = path
     n = len(s)
@@ -369,5 +372,7 @@ def nbtpath_parse(path):
         append((_T_KEY, key))
         i = j
 
+    if len(paths_cache) >= 2000:
+        paths_cache.popitem(last=False)
     paths_cache[path] = out
     return out
