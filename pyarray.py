@@ -4,8 +4,9 @@
 纯 Python 实现的整数数组 array, 用法与 Python 2.7 标准库 array.array 相同
 
 与标准库的差异:
-- 只支持类型码 b (1 字节)、i (4 字节), 其余类型码报 ValueError; 类型码只接受 str
-- 没有 buffer_info、tofile、fromfile、read、write、tounicode、fromunicode, 不支持 pickle
+- 只支持类型码 b (1 字节) 与 i (4 字节), 其余类型码报 ValueError
+- 类型码只接受 str
+- 没有 buffer_info/tofile/fromfile/read/write/tounicode/fromunicode, 不支持 pickle
 - fromstring() 只接受 str
 """
 from struct import pack as _pack, unpack as _unpack
@@ -69,7 +70,7 @@ def _index(item):
     return int(i)
 
 def _plain(typecode, data):
-    """切片、拼接、重复、拷贝的结果与标准库相同, 总是基类 array 而不是调用者的子类"""
+    """切片/拼接/重复/拷贝的结果与标准库相同, 总是基类 array 而不是调用者的子类"""
     obj = object.__new__(array)
     obj._typecode = typecode
     obj._data = data

@@ -242,7 +242,7 @@ class Compound(Base, dict):
         return {k: v.serialize() for k, v in self.items()}
 
     def path(self, path):  # type: (str) -> Base | None
-        """通过NBTPath获取子标签（高性能 + 支持单引号）"""
+        """通过NBTPath获取子标签(键名支持单引号),路径不存在时返回 None"""
         tokens = nbtpath_parse(path)
 
         data = self
@@ -266,7 +266,7 @@ class Compound(Base, dict):
         return data
 
     def modify(self, path, value):  # type: (str, Base) -> None
-        """通过NBTPath修改子标签（高性能 + 支持单引号 + 自动建中间节点）"""
+        """通过NBTPath修改子标签(键名支持单引号),自动创建缺失的中间节点"""
         _raise_end_store_error(value)
         if not _is_nbt_tag(value):
             raise NBTStoreError("值必须为NBT标签对象")

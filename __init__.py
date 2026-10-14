@@ -279,7 +279,7 @@ class _SnbtParser(object):
         return self._read_typed_value()
 
 def parse_value(value_part): # type: (str) -> base.Base
-    """按 Minecraft Java 1.18.2 规则解析一个 SNBT 值。"""
+    """按 Minecraft Java 1.18.2 规则解析一个 SNBT 值"""
     value_part = value_part.strip()
     if not value_part:
         raise base.NBTParseError(value_part, 0, "缺少NBT值")
@@ -335,7 +335,7 @@ def parse_item_format(value): # type: (str | tag.Compound) -> dict
         }
 
 def parse_itemDict(value): # type: (dict) -> tag.Compound
-    """将 wy itemDict 转换为复合标签"""
+    """将网易 itemDict 转换为复合标签"""
     cache = value.copy()
     return tag.Compound({
         "Name": tag.String(cache["newItemName"]),
@@ -397,7 +397,7 @@ def _de_parse_dict(value):
     return tag.Compound(result)
 
 def deserialize_nbt_dict(user_data): # type: (dict) -> tag.Compound
-    """将wy提供的NBT字典(userData)解析为复合标签"""
+    """将网易提供的NBT字典(userData)解析为复合标签"""
     return tag.Compound(_de_parse_dict(user_data))
 
 _enchantment_ids = {
