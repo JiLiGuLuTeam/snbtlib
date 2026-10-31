@@ -242,7 +242,7 @@ class Compound(Base, dict):
         return {k: v.serialize() for k, v in self.items()}
 
     def path(self, path):  # type: (str) -> Base | None
-        """通过NBTPath获取子标签(键名支持单引号),路径不存在时返回 None"""
+        """通过NBTPath获取子标签(键名支持单引号),路径不存在时返回 `None`"""
         tokens = nbtpath_parse(path)
 
         data = self

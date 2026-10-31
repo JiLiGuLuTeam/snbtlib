@@ -4,7 +4,7 @@
 纯 Python 实现的整数数组 array, 用法与 Python 2.7 标准库 array.array 相同
 
 与标准库的差异:
-- 只支持类型码 b (1 字节) 与 i (4 字节), 其余类型码报 ValueError
+- 只支持类型码 b (`1` 字节) 与 i (`4` 字节), 其余类型码报 ValueError
 - 类型码只接受 str
 - 没有 buffer_info/tofile/fromfile/read/write/tounicode/fromunicode, 不支持 pickle
 - fromstring() 只接受 str
@@ -15,7 +15,7 @@ _LONG_MIN = -0x8000000000000000
 _LONG_MAX = 0x7FFFFFFFFFFFFFFF
 
 def _as_long(v):
-    """同 PyArg_Parse 的 l 格式: 拒绝浮点, 其余经 __int__ 取整, 超出 64 位报 OverflowError"""
+    """同 PyArg_Parse 的 l 格式: 拒绝浮点, 其余经 __int__ 取整, 超出 `64` 位报 OverflowError"""
     if isinstance(v, float):
         raise TypeError("integer argument expected, got float")
     if not isinstance(v, (int, long)):
@@ -58,7 +58,7 @@ _TYPES = {
 }
 
 def _index(item):
-    """同 PyNumber_AsSsize_t(item, IndexError), item 没有 __index__ 时返回 None"""
+    """同 PyNumber_AsSsize_t(item, IndexError), item 没有 __index__ 时返回 `None`"""
     index_method = getattr(type(item), "__index__", None)
     if index_method is None:
         return None
